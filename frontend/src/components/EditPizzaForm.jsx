@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+// API base URL
 const API_URL = 'http://localhost:5000';
 
+// Component for editing an existing pizza
 function EditPizzaForm({ pizza, onCancel, onPizzaUpdated }) {
-    const [name, setName] = useState(pizza.name);
-    const [availableToppings, setAvailableToppings] = useState([]);
-    const [selectedToppings, setSelectedToppings] = useState(pizza.toppings.map((topping) => topping.topping_id));
-    const [error, setError] = useState(''); // State to store error messages
+    const [name, setName] = useState(pizza.name); 
+    const [availableToppings, setAvailableToppings] = useState([]); 
+    const [selectedToppings, setSelectedToppings] = useState(
+        pizza.toppings.map((topping) => topping.topping_id) // Initially selected toppings for the pizza
+    );
+    const [error, setError] = useState(''); 
 
+    // Fetch available toppings from the API when component mounts
     useEffect(() => {
         const fetchToppings = async () => {
             try {
                 const response = await axios.get(`${API_URL}/toppings`);
-                setAvailableToppings(response.data);
+                setAvailableToppings(response.data); 
             } catch (error) {
                 console.error("Error fetching toppings:", error);
             }
@@ -21,27 +26,29 @@ function EditPizzaForm({ pizza, onCancel, onPizzaUpdated }) {
         fetchToppings();
     }, []);
 
+
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent form default submission/reloading
         try {
-            const toppings = selectedToppings.map((id) => ({ topping_id: id }));
-            await axios.put(`${API_URL}/pizzas/${pizza.pizza_id}`, { name, toppings });
-            setError(''); // Clear error on successful submission
-            onPizzaUpdated(); 
+            const toppings = selectedToppings.map((id) => ({ topping_id: id })); // Prepare toppings data
+            await axios.put(`${API_URL}/pizzas/${pizza.pizza_id}`, { name, toppings }); // Update pizza in API
+            setError(''); 
+            onPizzaUpdated(); // Notify parent component to refresh pizza list
         } catch (error) {
             if (error.response && error.response.status === 400) {
-                setError(error.response.data.error || "An error occurred. Please try again."); // Display error message
+                setError(error.response.data.error || "An error occurred. Please try again.");
             } else {
                 console.error("Error updating pizza:", error);
             }
         }
     };
 
+    // Handle topping selection/deselection
     const handleToppingChange = (e) => {
         const { value, checked } = e.target;
         setSelectedToppings((prev) =>
             checked ? [...prev, parseInt(value)] : prev.filter((id) => id !== parseInt(value))
-        );
+        ); // Add or remove topping ID from selected toppings
     };
 
     return (
@@ -50,7 +57,7 @@ function EditPizzaForm({ pizza, onCancel, onPizzaUpdated }) {
                 type="text"
                 placeholder="Pizza Name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)} // Update name state on input change
                 required
                 className="form-control mb-2"
             />
@@ -62,8 +69,8 @@ function EditPizzaForm({ pizza, onCancel, onPizzaUpdated }) {
                             type="checkbox"
                             className="form-check-input"
                             value={topping.topping_id}
-                            onChange={handleToppingChange}
-                            checked={selectedToppings.includes(topping.topping_id)}
+                            onChange={handleToppingChange} 
+                            checked={selectedToppings.includes(topping.topping_id)} // Check if topping is selected
                         />
                         {topping.name}
                     </label>

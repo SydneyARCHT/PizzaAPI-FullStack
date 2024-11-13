@@ -1,11 +1,11 @@
 from flask import Flask, jsonify, request
-from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, Session
+from sqlalchemy.orm import Session
 from sqlalchemy import select
 from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 from marshmallow import ValidationError, fields, validate
 import os
+from models import db, Topping, Pizza
 
 # Initialize Flask app and configurations
 app = Flask(__name__)
@@ -14,41 +14,15 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
     'DATABASE_URL', 'mysql+mysqlconnector://root:SydneyARCHTsql1!@localhost/pizza_db'
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+db.init_app(app)  # Initialize SQLAlchemy with app
 
-# Database and Marshmallow initialization
-class Base(DeclarativeBase):
-    pass
-
-db = SQLAlchemy(app, model_class=Base)
+# Initialize Marshmallow
 ma = Marshmallow(app)
-
-# ====================================== MODELS =============================================
-class Topping(Base):
-    __tablename__ = "toppings"
-    topping_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(db.String(100), unique=True, nullable=False)
-
-    def __repr__(self):
-        return f"<Topping {self.topping_id} - {self.name}>"
-
-class Pizza(Base):
-    __tablename__ = "pizzas"
-    pizza_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(db.String(100), unique=True, nullable=False)
-    toppings: Mapped[list[Topping]] = db.relationship('Topping', secondary="pizza_topping", backref="pizzas")
-
-pizza_topping = db.Table(
-    "pizza_topping",
-    Base.metadata,
-    db.Column("pizza_id", db.ForeignKey("pizzas.pizza_id"), primary_key=True),
-    db.Column("topping_id", db.ForeignKey("toppings.topping_id"), primary_key=True)
-)
 
 # ====================================== SCHEMAS ============================================
 class ToppingReferenceSchema(ma.Schema):
     topping_id = fields.Integer(required=True)
 
-# Full schema for retrieving toppings with details
 class ToppingSchema(ma.Schema):
     topping_id = fields.Integer()
     name = fields.String(required=True)
@@ -56,7 +30,6 @@ class ToppingSchema(ma.Schema):
     class Meta:
         fields = ("topping_id", "name")
 
-# Schema for creating pizzas - expects only topping_id in each topping
 class PizzaCreateSchema(ma.Schema):
     pizza_id = fields.Integer()
     name = fields.String(required=True, validate=validate.Length(min=1))
@@ -65,7 +38,6 @@ class PizzaCreateSchema(ma.Schema):
     class Meta:
         fields = ("pizza_id", "name", "toppings")
 
-# Schema for retrieving pizzas - includes full details of each topping
 class PizzaRetrieveSchema(ma.Schema):
     pizza_id = fields.Integer()
     name = fields.String(required=True)
@@ -92,19 +64,17 @@ def get_toppings():
 def add_topping():
     try:
         topping_data = topping_schema.load(request.json)
-        new_name = topping_data['name'].strip().lower()  # Normalize name to lowercase and trim whitespace
+        new_name = topping_data['name'].strip().lower()
     except ValidationError as err:
         return jsonify(err.messages), 400
     
     with Session(db.engine) as session:
-        # Check if a topping with this lowercase name already exists
         duplicate_topping = session.execute(
             select(Topping).filter(Topping.name.ilike(new_name))
         ).scalars().first()
         if duplicate_topping:
             return jsonify({"error": f"Topping '{topping_data['name']}' already exists."}), 400
         
-        # Add the topping with the original casing
         new_topping = Topping(name=topping_data['name'])
         session.add(new_topping)
         session.commit()
@@ -115,7 +85,7 @@ def add_topping():
 def edit_topping(topping_id):
     try:
         topping_data = topping_schema.load(request.json)
-        new_name = topping_data['name'].strip().lower()  # Normalize name to lowercase and trim whitespace
+        new_name = topping_data['name'].strip().lower()
     except ValidationError as err:
         return jsonify(err.messages), 400
 
@@ -124,14 +94,12 @@ def edit_topping(topping_id):
         if not topping:
             return jsonify({"error": "Topping not found"}), 404
         
-        # Check for case-insensitive duplicates with a different topping_id
         duplicate_topping = session.execute(
             select(Topping).filter(Topping.name.ilike(new_name), Topping.topping_id != topping_id)
         ).scalars().first()
         if duplicate_topping:
             return jsonify({"error": f"Topping '{topping_data['name']}' already exists."}), 400
         
-        # Update the topping name with the original casing
         topping.name = topping_data['name']
         session.commit()
     
@@ -152,18 +120,17 @@ def delete_topping(topping_id):
 @app.route("/pizzas", methods=["GET"])
 def get_pizzas():
     pizzas = db.session.execute(select(Pizza)).scalars().all()
-    return pizza_retrieve_schema.jsonify(pizzas), 200  # Use PizzaRetrieveSchema for full details
+    return pizza_retrieve_schema.jsonify(pizzas), 200
 
 @app.route("/pizzas", methods=["POST"])
 def add_pizza():
     try:
         pizza_data = pizza_create_schema.load(request.json)
-        new_name = pizza_data['name'].strip().lower()  # Normalize name to lowercase and trim whitespace
+        new_name = pizza_data['name'].strip().lower()
     except ValidationError as err:
         return jsonify(err.messages), 400
     
     with Session(db.engine) as session:
-        # Check if a pizza with this lowercase name already exists
         duplicate_pizza = session.execute(
             select(Pizza).filter(Pizza.name.ilike(new_name))
         ).scalars().first()
@@ -171,7 +138,6 @@ def add_pizza():
         if duplicate_pizza:
             return jsonify({"error": f"Pizza '{pizza_data['name']}' already exists."}), 400
         
-        # Add the pizza with the original casing
         new_pizza = Pizza(name=pizza_data['name'])
         for topping_data in pizza_data['toppings']:
             topping = session.execute(select(Topping).filter(Topping.topping_id == topping_data['topping_id'])).scalar()

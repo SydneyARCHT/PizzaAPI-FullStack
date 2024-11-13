@@ -5,9 +5,9 @@ import ToppingList from './components/ToppingList';
 import AddToppingForm from './components/AddToppingForm';
 import PizzaList from './components/PizzaList';
 import AddPizzaForm from './components/AddPizzaForm';
-import './App.css'
+import './App.css';
 
-
+// Component to manage toppings, includes adding and listing toppings
 function ToppingsPage() {
   return (
       <div>
@@ -18,6 +18,7 @@ function ToppingsPage() {
   );
 }
 
+// Component to manage pizzas, includes adding and listing pizzas
 function PizzasPage() {
   return (
       <div>
@@ -28,7 +29,7 @@ function PizzasPage() {
   );
 }
 
-
+// Main App component with Router setup
 function App() {
     return (
         <Router>
@@ -39,16 +40,14 @@ function App() {
                     <Link to="/toppings">Manage Toppings</Link> | 
                     <Link to="/pizzas">Manage Pizzas</Link>
                 </nav>
-
                 <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/toppings" element={<ToppingsPage />} />
-                    <Route path="/pizzas" element={<PizzasPage />} />
+                    <Route path="/" element={<Home />} /> 
+                    <Route path="/toppings" element={<ToppingsPage />} /> 
+                    <Route path="/pizzas" element={<PizzasPage />} /> 
                 </Routes>
             </div>
         </Router>
     );
 }
-
 
 export default App;
