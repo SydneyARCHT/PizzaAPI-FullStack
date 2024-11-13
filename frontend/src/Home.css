@@ -1,0 +1,12 @@
+.home {
+    line-height: 1.6;
+  }
+  
+  .home section {
+    margin-top: 15px;
+  }
+  
+  .home h3 {
+    color: #007bff;
+    margin-bottom: 5px;
+  }
