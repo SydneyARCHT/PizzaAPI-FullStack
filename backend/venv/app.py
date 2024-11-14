@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app, origins=["https://pizza-api-full-stack-mjzo.vercel.app"])
 
 # Database configuration from environment variables
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)  # Initialize SQLAlchemy with app
 
