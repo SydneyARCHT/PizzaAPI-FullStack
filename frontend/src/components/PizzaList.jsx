@@ -3,7 +3,7 @@ import axios from 'axios';
 import EditPizzaForm from './EditPizzaForm';
 
 // API base URL
-const API_URL = 'http://localhost:5000';
+const API_URL = 'https://pizzaapi-fullstack.onrender.com';
 
 // PizzaList component to display, edit, and delete pizzas
 function PizzaList() {

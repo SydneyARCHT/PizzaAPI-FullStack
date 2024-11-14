@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 // API base URL
-const API_URL = 'http://localhost:5000';
+const API_URL = 'https://pizzaapi-fullstack.onrender.com';
 
 // ToppingList component to display, edit, and delete toppings
 function ToppingList() {
