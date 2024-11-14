@@ -10,15 +10,14 @@ from models import db, Topping, Pizza
 # Initialize Flask app and configurations
 app = Flask(__name__)
 
-# Configure CORS to allow requests only from the Vercel frontend URL
-CORS(app, origins=["https://pizza-api-full-stack-mjzo.vercel.app"])
-
-# Database configuration from environment variables
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-db.init_app(app)  # Initialize SQLAlchemy with app
 
-# Initialize Marshmallow
+# CORS configuration - expand to allow all origins for troubleshooting
+CORS(app)  
+
+# Initialize SQLAlchemy and Marshmallow with the app
+db.init_app(app)
 ma = Marshmallow(app)
 
 # ====================================== SCHEMAS ============================================
@@ -28,7 +27,6 @@ class ToppingReferenceSchema(ma.Schema):
 class ToppingSchema(ma.Schema):
     topping_id = fields.Integer()
     name = fields.String(required=True)
-
     class Meta:
         fields = ("topping_id", "name")
 
@@ -36,7 +34,6 @@ class PizzaCreateSchema(ma.Schema):
     pizza_id = fields.Integer()
     name = fields.String(required=True, validate=validate.Length(min=1))
     toppings = fields.List(fields.Nested(ToppingReferenceSchema))
-
     class Meta:
         fields = ("pizza_id", "name", "toppings")
 
@@ -44,7 +41,6 @@ class PizzaRetrieveSchema(ma.Schema):
     pizza_id = fields.Integer()
     name = fields.String(required=True)
     toppings = fields.List(fields.Nested(ToppingSchema))
-
     class Meta:
         fields = ("pizza_id", "name", "toppings")
 
@@ -106,7 +102,6 @@ def edit_topping(topping_id):
         session.commit()
     
     return jsonify({"message": "Topping updated successfully"}), 200
-    
 
 @app.route("/toppings/<int:topping_id>", methods=["DELETE"])
 def delete_topping(topping_id):
@@ -191,5 +186,5 @@ def home():
 # Run the application
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        db.create_all()  # Run only once or use migrations for production
     app.run(debug=True)
