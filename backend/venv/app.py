@@ -9,9 +9,12 @@ from models import db, Topping, Pizza
 
 # Initialize Flask app and configurations
 app = Flask(__name__)
-CORS(app)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI", "mysql+mysqlconnector://root:SydneyARCHTsql1!@localhost/pizza_db")
-# app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:SydneyARCHTsql1!@localhost/pizza_db"
+
+# Configure CORS to allow requests only from the Vercel frontend URL
+CORS(app, origins=["https://pizza-api-full-stack-mjzo.vercel.app"])
+
+# Database configuration from environment variables
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("SQLALCHEMY_DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)  # Initialize SQLAlchemy with app
 
